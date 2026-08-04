@@ -58,7 +58,8 @@ main{max-width:1720px;margin:0 auto;padding:18px 22px 60px;display:grid;grid-tem
 .sticky{position:sticky;top:70px}
 
 /* ---------- LISTA DE CANDIDATOS ---------- */
-.crow{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:13px 15px;border-bottom:1px solid var(--line2);cursor:default}
+.crow{display:grid;grid-template-columns:44px 1fr;gap:12px;padding:13px 15px;border-bottom:1px solid var(--line2);cursor:default;overflow:hidden}
+.crow > div:last-child{min-width:0}
 .crow:last-child{border-bottom:none}
 .av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:15px;color:#fff;border:2px solid #fff;box-shadow:0 0 0 2px currentColor}
 .crow .l1{display:flex;align-items:center;gap:7px}

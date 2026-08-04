@@ -195,6 +195,25 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
 #tip .r i{width:8px;height:8px;border-radius:2px;display:block}
 #tip .r b{margin-left:auto;font-weight:700}
 
+/* ---------- CÂMARA ---------- */
+.camara-sec{max-width:1720px;margin:0 auto;padding:0 22px 60px}
+.cam-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line2);border-bottom:1px solid var(--line2)}
+.cam-sum>div{background:var(--card);padding:11px 16px}
+.cam-sum .k{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim2)}
+.cam-sum .v{font-size:22px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.cam-note{font-size:12px;color:var(--dim);padding:9px 15px;border-bottom:1px solid var(--line2);line-height:1.5}
+.cam-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:0;border-top:none}
+.cstate{padding:9px 14px;border-bottom:1px solid var(--line2);border-right:1px solid var(--line2)}
+.cstate.win{background:#fffdf0}
+.cstate-row{display:flex;align-items:center;gap:7px}
+.cstate .utag{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:11px;min-width:26px;color:var(--dim)}
+.cstate .unm{font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.cstate .usv{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;margin-left:auto;white-space:nowrap}
+.cstate .ubar{height:4px;border-radius:99px;background:#eeeee7;overflow:hidden;margin:5px 0 3px}
+.cstate .ubar span{display:block;height:100%;border-radius:99px;background:#F5C518;transition:width .09s linear}
+.cstate .umeta{font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--dim2)}
+@media (max-width:820px){.cam-sum{grid-template-columns:1fr 1fr}.cam-grid{grid-template-columns:1fr 1fr}.camara-sec{padding:0 14px 40px}}
+
 @media (max-width:1440px){ main{grid-template-columns:340px minmax(0,1fr) 330px} }
 @media (max-width:1180px){
   main{grid-template-columns:minmax(0,1fr) 360px}
@@ -280,6 +299,16 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   </div>
 </main>
 
+<div class="camara-sec">
+  <section class="card">
+    <div class="chead">
+      <span class="lbl">Câmara dos Deputados — Projeção Missão</span>
+      <span class="tag">40% dos votos presidenciais → chapa · 513 cadeiras · D'Hondt simplificado</span>
+    </div>
+    <div id="cam-body"></div>
+  </section>
+</div>
+
 <div id="tip"></div>
 
 <script>
@@ -347,6 +376,10 @@ const CANDS = [
 ];
 const C=Object.fromEntries(CANDS.map(c=>[c.id,c]));
 const IDS=CANDS.map(c=>c.id);
+
+/* cadeiras de deputado federal por UF — 2026 (STF manteve 513, mesma distribuição de 2022) */
+const CADEIRAS={AC:8,AL:9,AP:8,AM:8,BA:39,CE:22,DF:8,ES:10,GO:17,MA:18,MT:8,MS:8,MG:53,PA:17,PB:12,PR:30,PE:25,PI:10,RJ:46,RN:8,RS:31,RO:8,RR:8,SC:16,SP:70,SE:8,TO:8};
+const COATTAIL=0.40;
 
 /* ---------- modelo ----------
    FLUXO: o usuario define primeiro a PROPORCAO NACIONAL (G.target).
@@ -809,12 +842,56 @@ function renderChrome(sc){
     '<span class="lg" style="margin-left:auto">◆ estado fixado manualmente</span>';
 }
 
+/* ---------- CÂMARA DOS DEPUTADOS ---------- */
+function renderCamara(){
+  const box=document.getElementById('cam-body'); if(!box) return;
+  const rc=C['renan'];
+  const rows=[...S].map(s=>{
+    const cad=CADEIRAS[s.uf]||0;
+    const rpct=s.votes['renan'];
+    const mpct=rpct*COATTAIL;
+    const sf=mpct/100*cad;
+    return {s,cad,rpct,mpct,sf};
+  }).sort((a,b)=>b.sf-a.sf);
+  const totalSf=rows.reduce((a,r)=>a+r.sf,0);
+  const totalFl=rows.reduce((a,r)=>a+Math.floor(r.sf),0);
+  const natRenan=weighted(s=>s.votes)['renan'];
+  const natMissao=natRenan*COATTAIL;
+  const maxSf=Math.max(...rows.map(r=>r.sf),0.01);
+  const bestState=rows[0].s;
+  box.innerHTML=
+    '<div class="cam-sum">'+
+      '<div><div class="k">Cadeiras projetadas</div><div class="v" style="color:'+rc.txt+'">'+totalFl+(totalSf-totalFl>=0.3?'–'+(totalFl+1):'')+'</div></div>'+
+      '<div><div class="k">Renan Santos nacional</div><div class="v">'+f1(natRenan)+'%</div></div>'+
+      '<div><div class="k">Chapa Missão (×40%)</div><div class="v">'+f1(natMissao)+'%</div></div>'+
+      '<div><div class="k">Estado mais forte</div><div class="v">'+bestState.uf+' <small style="font-size:13px;font-weight:400;color:var(--dim)">'+f1(rows[0].sf)+' cad.</small></div></div>'+
+    '</div>'+
+    '<div class="cam-note">Metodologia: votos presidenciais do Renan Santos em cada estado × 40% (coattail estimado) = % da chapa Missão para deputado federal. Cadeiras por quociente eleitoral simples (proporcional). Não considera cláusula de barreira (2% nacional) nem federações partidárias.</div>'+
+    '<div class="cam-grid">'+
+    rows.map(r=>{
+      const win=Math.floor(r.sf)>=1;
+      const barW=r.sf/maxSf*100;
+      return '<div class="cstate'+(win?' win':'')+'">'+
+        '<div class="cstate-row">'+
+          '<span class="utag">'+r.s.uf+'</span>'+
+          '<span class="unm">'+r.s.nome+'</span>'+
+          '<span class="usv" style="color:'+(win?rc.txt:'var(--dim)')+'">'+
+            (win?'<b>'+Math.floor(r.sf)+'</b> cadeira'+(Math.floor(r.sf)>1?'s':''):f1(r.sf)+' cad.')+
+          '</span>'+
+        '</div>'+
+        '<div class="ubar"><span style="width:'+barW+'%"></span></div>'+
+        '<div class="umeta">Renan '+f1(r.rpct)+'% → Missão '+f1(r.mpct)+'% · '+r.cad+' cadeiras disp.</div>'+
+      '</div>';
+    }).join('')+
+    '</div>';
+}
+
 function renderExceptEditor(){
   const sc=scenario();
   if(G.round===2&&sc.mode!=='runoff') G.round=1;
   renderChrome(sc); renderHero(sc);
   if(dragging) updateList(sc); else { renderList(sc); renderCtrl(sc); }
-  renderMap(sc); renderStWon(sc); renderProg(sc);
+  renderMap(sc); renderStWon(sc); renderProg(sc); renderCamara();
 }
 function scheduleUpdate(){
   if(rafPending) return; rafPending=true;

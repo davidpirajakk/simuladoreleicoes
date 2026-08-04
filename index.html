@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js" integrity="sha384-CjloA8y00+1SDAUkjs099PVfnY2KmDC2BZnws9kh8D/lX1s46w6EPhpXdqMfjK6i" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
 <style>
 :root{
   --bg:#f4f4f1; --card:#ffffff; --line:#e4e4dd; --line2:#eeeeE8;
@@ -224,6 +225,7 @@ input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;bac
   <div class="right">
     <button class="btn" id="fillAll">Preencher 2022</button>
     <button class="btn" id="randomize">Cenário aleatório</button>
+    <button class="btn" id="saveJpeg">Salvar JPEG</button>
     <button class="btn pri" id="reset">Reiniciar</button>
   </div>
 </div></div>
@@ -840,6 +842,39 @@ document.getElementById('randomize').onclick=()=>{
   IDS.forEach(i=>{ t[i]=Math.max(0.5,BASELINE_NACIONAL[i]*(0.5+Math.random()*1.1)); sum+=t[i]; });
   IDS.forEach(i=>G.target[i]=t[i]/sum*100);
   S.forEach(s=>s.pinned=false); fit(); render();
+};
+
+document.getElementById('saveJpeg').onclick = async () => {
+  const btn = document.getElementById('saveJpeg');
+  btn.textContent = 'Gerando…';
+  btn.disabled = true;
+  try {
+    const topbar = document.querySelector('.topbar');
+    topbar.style.display = 'none';
+    const canvas = await html2canvas(document.body, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#f4f4f1',
+      scrollX: 0, scrollY: -window.scrollY
+    });
+    topbar.style.display = '';
+    const sc = scenario();
+    const label = sc.mode === 'win'
+      ? '1turno-' + sc.top.id
+      : '2turno-' + sc.a.id + '-vs-' + sc.b.id;
+    const link = document.createElement('a');
+    link.download = 'simulacao-2026-' + label + '.jpg';
+    link.href = canvas.toDataURL('image/jpeg', 0.92);
+    link.click();
+  } catch(e) {
+    document.querySelector('.topbar').style.display = '';
+    console.error(e);
+    alert('Erro ao gerar imagem: ' + e.message);
+  } finally {
+    btn.textContent = 'Salvar JPEG';
+    btn.disabled = false;
+  }
 };
 
 fit(); render();

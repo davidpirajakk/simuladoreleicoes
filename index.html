@@ -828,12 +828,12 @@ document.getElementById('modeSeg').addEventListener('click',e=>{
 });
 document.getElementById('reset').onclick=()=>{
   S.forEach(s=>{s.votes={...s.base};s.pinned=false;});
-  IDS.forEach(i=>G.target[i]=BASELINE_NACIONAL[i]);
-  G.round=1; G.reg='BR'; sel=null; fit(); render();
+  G.round=1; G.reg='BR'; sel=null;
+  syncTargetFromStates(); render();
 };
 document.getElementById('fillAll').onclick=()=>{
   S.forEach(s=>{s.votes={...s.base};s.pinned=false;});
-  IDS.forEach(i=>G.target[i]=BASELINE_NACIONAL[i]); fit(); render();
+  syncTargetFromStates(); render();
 };
 document.getElementById('randomize').onclick=()=>{
   let sum=0; const t={};
